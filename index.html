@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siva Parvathi Sarees | Digital Ledger</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* Emergency CSS for Login Screen (in case style.css is blocked) */
+        :root { --accent: #D4AF37; --bg: #0a0a0a; --border: rgba(255,255,255,0.1); }
+        body { margin:0; background: var(--bg); font-family: sans-serif; color: white; }
+        .login-overlay { position: fixed; inset:0; background: var(--bg); display:flex; align-items:center; justify-content:center; z-index:2000; padding:20px; }
+        .login-card { background: #1a1a1a; padding: 2.5rem; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid var(--border); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .login-logo { font-size: 3rem; color: var(--accent); margin-bottom: 1rem; }
+        .login-title { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .login-subtitle { font-size: 0.8rem; color: #888; margin-bottom: 2rem; }
+        .login-group { text-align: left; margin-bottom: 1.2rem; }
+        .login-group label { display: block; font-size: 0.75rem; color: var(--accent); margin-bottom: 5px; font-weight: bold; }
+        .login-input { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; color: white; box-sizing: border-box; }
+        .login-btn { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 10px; color: black; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="logo-small">Siva Parvathi | ID: 170617</div>
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </header>
+
+
+
+    <div class="app-container" id="main-app">
+        <!-- Sidebar/Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-gem logo-icon"></i>
+                <span>Siva Parvathi</span>
+            </div>
+            <nav>
+                <a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="#" class="nav-link" data-section="barrow"><i class="fas fa-book"></i> Barrow Book</a>
+                <a href="#" class="nav-link" data-section="sales"><i class="fas fa-shopping-bag"></i> Daily Sales</a>
+                <a href="#" class="nav-link" data-section="suppliers"><i class="fas fa-truck"></i> Suppliers</a>
+                <a href="#" class="nav-link" data-section="reports"><i class="fas fa-chart-line"></i> Monthly Report</a>
+            </nav>
+
+
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <section id="dashboard">
+                <div class="header">
+                    <div style="display:flex; align-items:center; gap:1rem;">
+                        <div class="date-display" id="currentDate">Loading...</div>
+                        <div id="sync-status" style="font-size:0.8rem; color:var(--accent);">
+                            <i class="fas fa-check-circle"></i> Connected | Shop: 170617
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card"><span class="stat-label">Total Outstanding Credit</span><div class="stat-value gold" id="totalBarrow">₹0</div></div>
+                    <div class="stat-card"><span class="stat-label">Daily Sales (Today)</span><div class="stat-value" id="todaySales">₹0</div></div>
+                    <div class="stat-card"><span class="stat-label">Total Purchased (Bill Sum)</span><div class="stat-value" id="totalPurchasedSum">₹0</div></div>
+                    <div class="stat-card"><span class="stat-label">Total Owed to Suppliers</span><div class="stat-value red" id="totalOwed">₹0</div></div>
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;">
+                    <!-- Backup & Restore Column -->
+                    <div style="flex: 1; min-width: 280px;">
+                        <div class="header" style="margin-top: 0;"><h2>Backup & Restore</h2></div>
+                        <div class="form-card" style="display: flex; flex-direction: column; gap: 0.75rem; background: rgba(255,215,0,0.05); border: 1px dashed var(--accent); padding: 1.25rem; height: 100%; justify-content: space-between;">
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">Save your data to the cloud using a secret code or download a manual backup file.</p>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-outline" style="flex: 1;" onclick="backupFullData()"><i class="fas fa-file-export"></i> Backup</button>
+                                <label class="btn btn-outline" style="cursor:pointer; flex: 1; text-align: center; display: inline-flex; justify-content: center; align-items: center;">
+                                    <i class="fas fa-file-import" style="margin-right: 5px;"></i> Restore
+                                    <input type="file" style="display:none;" onchange="restoreFullData(event)">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fast2SMS Settings Column -->
+                    <div style="flex: 1; min-width: 280px;">
+                        <div class="header" style="margin-top: 0;"><h2>Bulk SMS Settings</h2></div>
+                        <div class="form-card" style="display: flex; flex-direction: column; gap: 0.75rem; background: rgba(37, 211, 102, 0.05); border: 1px dashed #25D366; padding: 1.25rem; height: 100%; justify-content: space-between;">
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
+                                Enter your <strong>Fast2SMS Dev API Key</strong> for 100% automated background sending. Get your key from <a href="https://www.fast2sms.com" target="_blank" style="color:var(--accent); text-decoration:underline; font-weight: bold;">fast2sms.com</a>.
+                            </p>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" id="fast2smsApiKey" placeholder="Paste Dev API Key..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: white;" oninput="saveFast2SMSKey()">
+                                <button class="btn btn-outline" style="border-color: #25D366; color: #25D366;" onclick="toggleApiKeyVisibility()"><i class="fas fa-eye" id="apiKeyEyeIcon"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>  </div>
+            </section>
+
+            <!-- Barrow Section -->
+            <section id="barrow" style="display:none;">
+                <div class="header">
+                    <h1>Barrow Book (Credits)</h1>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                        <div class="search-box" style="position:relative; flex:1; min-width:200px;">
+                            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                            <input type="text" id="borrowerSearch" placeholder="Search..." style="padding-left:35px; width:100%; border-radius:8px; height:40px; background:var(--card-bg); border:1px solid var(--border); color:white;">
+                        </div>
+                        <button class="btn btn-primary" onclick="openBulkReminderModal()" style="background: var(--accent); color: black;">
+                            <i class="fas fa-sms"></i> Bulk Reminders (>₹600)
+                        </button>
+                        <button class="btn btn-outline" onclick="exportData('borrowers')">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button class="btn btn-primary" onclick="openNewBorrowerModal()">
+                            <i class="fas fa-plus"></i> New Borrower
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="borrowerTable">
+                        <thead><tr><th>Name</th><th>Phone</th><th>Borrowed</th><th>Paid</th><th>Balance</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sales Section -->
+            <section id="sales" style="display:none;">
+                <div class="header">
+                    <h1>Daily Sale Book</h1>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-outline" onclick="exportData('sales')"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-primary" onclick="showModal('saleModal')">+ Add Sale</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="salesTable">
+                        <thead><tr><th>Date</th><th>Price</th><th>Action</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Suppliers Section -->
+            <section id="suppliers" style="display:none;">
+                <div class="header">
+                    <h1>Supplier Ledger</h1>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-outline" onclick="exportData('suppliers')"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-primary" onclick="showModal('supplierModal')">+ New Supplier</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="supplierTable">
+                        <thead><tr><th>Supplier Name</th><th>Total Bill</th><th>Paid</th><th>Debt</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" style="display:none;">
+                <div class="header">
+                    <h1>Monthly Summary</h1>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <input type="month" id="reportMonthPicker" class="btn btn-outline" style="height:45px; width:180px;" onchange="generateMonthlyReport()">
+                        <button class="btn btn-primary" onclick="generateMonthlyReport()">Show Report</button>
+                        <button class="btn btn-outline" onclick="exportMonthlyReport()"><i class="fas fa-file-export"></i> Export Report</button>
+                    </div>
+                </div>
+                <div class="stats-grid" style="margin-bottom: 2rem;">
+                    <div class="stat-card"><span class="stat-label">Sales</span><div class="stat-value gold" id="monthTotalSales">₹0</div></div>
+                    <div class="stat-card"><span class="stat-label">New Credits</span><div class="stat-value" id="monthTotalCredit">₹0</div></div>
+                    <div class="stat-card"><span class="stat-label">Collected</span><div class="stat-value" id="monthTotalCollected">₹0</div></div>
+                </div>
+                <div class="table-container">
+                    <table id="monthlyBreakdownTable">
+                        <thead><tr><th>Date</th><th>Sales</th><th>Credits</th><th>Collections</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); z-index:100; align-items:center; justify-content:center;">
+        
+        <!-- Borrower Modal -->
+        <div id="borrowerModal" class="form-card" style="display:none; width: 90%; max-width: 500px;">
+            <h2 id="borrowerModalTitle">Add New Borrower</h2>
+            <form id="borrowerForm">
+                <input type="hidden" id="borrowerEditIndex" value="-1">
+                <div class="form-group"><label>Customer Name</label><input type="text" id="custName" required></div>
+                <div class="form-group"><label>Phone Number</label><input type="tel" id="custPhone" required placeholder="91..."></div>
+                <div class="form-group"><label>Amount Borrowed</label><input type="number" id="custAmount" required></div>
+                <div style="display:flex; gap:1rem; margin-top:2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Payment Modal -->
+        <div id="paymentModal" class="form-card" style="display:none; width: 90%; max-width: 400px;">
+            <h2>Add Payment</h2>
+            <form id="paymentForm">
+                <input type="hidden" id="paymentBorrowerIndex">
+                <div class="form-group"><label>Amount Paid</label><input type="number" id="payAmount" required></div>
+                <div class="form-group"><label>Date</label><input type="date" id="payDate" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Save Payment</button>
+            </form>
+        </div>
+
+        <!-- Sale Modal -->
+        <div id="saleModal" class="form-card" style="display:none; width: 90%; max-width: 400px;">
+            <h2>Record Sale</h2>
+            <form id="saleForm">
+                <div class="form-group"><label>Total Price</label><input type="number" id="salePrice" required></div>
+                <div class="form-group"><label>Date</label><input type="date" id="saleDate" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Save Sale</button>
+            </form>
+        </div>
+
+        <!-- Supplier Modal -->
+        <div id="supplierModal" class="form-card" style="display:none; width: 90%; max-width: 500px;">
+            <h2>New Supplier</h2>
+            <form id="supplierForm">
+                <div class="form-group"><label>Supplier Name</label><input type="text" id="suppName" required></div>
+                <div class="form-group"><label>Total Bill Amount</label><input type="number" id="suppAmount" required></div>
+                <div class="form-group"><label>Date</label><input type="date" id="suppDate" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Save Supplier</button>
+            </form>
+        </div>
+
+        <!-- Supplier Payment Modal -->
+        <div id="suppPaymentModal" class="form-card" style="display:none; width: 90%; max-width: 400px;">
+            <h2>Pay Supplier</h2>
+            <form id="suppPaymentForm">
+                <input type="hidden" id="suppPaymentIndex">
+                <div class="form-group"><label>I Paid</label><input type="number" id="suppPayAmount" required></div>
+                <div class="form-group"><label>Date</label><input type="date" id="suppPayDate" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Record Payment</button>
+            </form>
+        </div>
+
+        <!-- Supplier Bill Modal -->
+        <div id="suppBillModal" class="form-card" style="display:none; width: 90%; max-width: 400px;">
+            <h2>Add Bill</h2>
+            <form id="suppBillForm">
+                <input type="hidden" id="suppBillIndex">
+                <div class="form-group"><label>Bill Amount</label><input type="number" id="suppBillAmount" required></div>
+                <div class="form-group"><label>Date</label><input type="date" id="suppBillDate" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Add Bill</button>
+            </form>
+        </div>
+
+        <!-- Extra Credit Modal -->
+        <div id="borrowCreditModal" class="form-card" style="display:none; width: 90%; max-width: 400px;">
+            <h2>Add Credit</h2>
+            <form id="borrowCreditForm">
+                <input type="hidden" id="borrowCreditIndex">
+                <div class="form-group"><label>Amount</label><input type="number" id="extraBorrowAmount" required></div>
+                <div class="form-group"><label>Date</label><input type="date" id="borrowCreditDate" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Add to Balance</button>
+            </form>
+        </div>
+
+        <!-- Bulk Reminder Modal -->
+        <div id="bulkReminderModal" class="form-card" style="display:none; width: 90%; max-width: 550px;">
+            <h2 id="bulkModalTitle" style="margin-bottom: 0.5rem;"><i class="fas fa-bell" style="color: var(--accent);"></i> Bulk Reminders (>₹600)</h2>
+            
+            <!-- Method Selector Card -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 15px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+                    Select your preferred reminder channel:
+                </p>
+                
+                <!-- Channel 1: WhatsApp (Custom Balances - Free) -->
+                <div style="margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);">
+                    <h4 style="color: #25D366; margin-bottom: 0.25rem;"><i class="fab fa-whatsapp"></i> WhatsApp Reminders (Custom Balances)</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
+                        Sends customized messages with the exact name and outstanding balance to each customer. Re-uses one browser tab to prevent clutter!
+                    </p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-whatsapp" style="flex: 1; justify-content: center; font-weight: bold; background: #25D366; color: black; box-shadow: 0 4px 12px rgba(37,211,102,0.2);" onclick="startCustomQueue('whatsapp')">
+                            <i class="fas fa-play"></i> Start Auto WhatsApp (5s Delay)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Channel 2: SMS Reminders (Free) -->
+                <div>
+                    <h4 style="color: var(--accent); margin-bottom: 0.25rem;"><i class="fas fa-sms"></i> SMS Reminders (Free)</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.4;">
+                        Send a polite general Telugu reminder to all 100 borrowers at the exact same time in one click.
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" style="flex: 1.2; justify-content: center; font-weight: bold; background: var(--accent); color: black;" onclick="sendGroupSMS()">
+                            <i class="fas fa-paper-plane"></i> Send Group SMS (One Click)
+                        </button>
+                        <button class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="startCustomQueue('sms')">
+                            <i class="fas fa-play"></i> Auto SMS (5s)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Indicator during Auto-Send -->
+            <div id="bulkStatusCard" style="display:none; background: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 15px; padding: 1rem; text-align: center; margin-bottom: 1.5rem;">
+                <p id="bulkProgressText" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500;">Ready</p>
+                <button id="bulkCancelBtn" class="btn btn-outline" style="width:100%; justify-content:center; color:var(--error); border-color:var(--error);" onclick="pauseAutoSend()">
+                    <i class="fas fa-pause"></i> Pause Auto Sending
+                </button>
+            </div>
+
+            <!-- Main action button for custom queues -->
+            <button id="bulkActionBtn" style="display:none;"></button>
+
+            <p style="font-size: 0.85rem; color: var(--accent); margin-bottom: 0.5rem; font-weight: bold;"><i class="fas fa-list"></i> Reminders Queue:</p>
+            <div id="bulkReminderList" style="max-height: 120px; overflow-y: auto; margin-bottom: 1.5rem; border: 1px solid var(--border); padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 10px;"></div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="bulkManualBtn" class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="sendManualReminder()">
+                    <i class="fas fa-step-forward"></i> Send Manual Next
+                </button>
+                <button id="bulkResetBtn" class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="resetBulkQueue()">
+                    <i class="fas fa-undo"></i> Reset Queue
+                </button>
+            </div>
+            <button class="btn btn-outline" style="width:100%; justify-content: center; margin-top: 0.5rem;" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
